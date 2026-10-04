@@ -1,0 +1,13 @@
+.{
+    .name = .coslcs,
+    .version = "0.0.1",
+    .dependencies = .{
+        .zbench = .{
+            .url = "https://github.com/hendriknielaender/zbench/archive/c24d128bfa80ec6a1b495b84ec827c6a0bec7865.tar.gz",
+            .hash = "zbench-0.11.2-YTdc76Q_AQAxonIKZ2-H1PdcESJGwyuYylw6RkPiBqyx",
+        },
+    },
+    .minimum_zig_version = "0.16.0",
+    .paths = .{""},
+    .fingerprint = 0x9b5b191f6b5ca112,
+}
