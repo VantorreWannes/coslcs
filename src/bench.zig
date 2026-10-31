@@ -5,9 +5,7 @@ const ClosestOffsetSumLCS = coslcs.ClosestOffsetSumLCS;
 
 fn randomArray(random: std.Random, comptime length: comptime_int, comptime alphabet_size: comptime_int) [length]u8 {
     var array: [length]u8 = undefined;
-    for (&array) |*element| {
-        element.* = random.int(u8) % alphabet_size;
-    }
+    for (&array) |*element| element.* = random.uintLessThan(u8, alphabet_size);
     return array;
 }
 
@@ -25,24 +23,22 @@ fn IterationBenchmark(comptime length: comptime_int, comptime alphabet_size: com
 
         pub fn run(self: *@This(), _: std.mem.Allocator) void {
             var iterator = ClosestOffsetSumLCS(usize).init(&self.source, &self.target);
-            while (iterator.next()) |value| {
-                std.mem.doNotOptimizeAway(value);
-            }
+            var checksum: u64 = 0;
+            while (iterator.next()) |value| checksum = checksum *% 31 +% value;
+            std.mem.doNotOptimizeAway(checksum);
         }
     };
 }
 
 pub fn main(init: std.process.Init) !void {
     const allocator = init.arena.allocator();
-    var seed: [8]u8 = undefined;
-    try std.Io.randomSecure(init.io, &seed);
 
     var prng = std.Random.DefaultPrng.init(0xbe2c5561);
 
     var bench = zbench.Benchmark.init(allocator, .{});
     defer bench.deinit();
 
-    const lengths = [_]comptime_int{ 10, 100, 250, 500 };
+    const lengths = [_]comptime_int{ 64, 128, 256, 512, 1024 };
     const alphabet_sizes = [_]comptime_int{ 1, 2, 4, 16, 32, 64, 128, 255 };
 
     inline for (lengths) |length| {

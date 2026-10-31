@@ -7,6 +7,7 @@ pub fn ClosestOffsetSumLCS(comptime Index: type) type {
     }
 
     const NO_INDEX = std.math.maxInt(Index);
+    const UNSET = std.math.maxInt(usize);
 
     return struct {
         const Self = @This();
@@ -21,6 +22,7 @@ pub fn ClosestOffsetSumLCS(comptime Index: type) type {
         target: []const u8,
         source_index: usize,
         target_index: usize,
+        offsets: [256]Index,
 
         pub fn init(source: []const u8, target: []const u8) Self {
             if (source.len > NO_INDEX or target.len > NO_INDEX) {
@@ -31,6 +33,7 @@ pub fn ClosestOffsetSumLCS(comptime Index: type) type {
                 .target = target,
                 .source_index = 0,
                 .target_index = 0,
+                .offsets = undefined,
             };
         }
 
@@ -60,42 +63,46 @@ pub fn ClosestOffsetSumLCS(comptime Index: type) type {
                 return pair;
             }
 
-            var occurrences: [256]Index = undefined;
-            @memset(&occurrences, NO_INDEX);
+            var present = [_]bool{false} ** 256;
+
             for (self.target[self.target_index..], 0..) |item, offset| {
-                if (occurrences[item] == NO_INDEX) {
-                    occurrences[item] = @intCast(offset);
+                if (!present[item]) {
+                    present[item] = true;
+                    self.offsets[item] = @intCast(offset);
                 }
             }
 
-            var best_sum: usize = std.math.maxInt(usize);
-            var best: ?Pair = null;
+            var best_sum: usize = UNSET;
+            var best_source: usize = 0;
+            var best_target: usize = 0;
+            var best_value: u8 = 0;
 
             for (self.source[self.source_index..], 0..) |item, offset| {
                 if (offset >= best_sum) break;
 
-                const stored_target_offset = occurrences[item];
-                if (stored_target_offset == NO_INDEX) continue;
-
-                const target_offset: usize = @intCast(stored_target_offset);
-                const sum = offset + target_offset;
+                const target_offset: usize = if (present[item]) self.offsets[item] else UNSET;
+                const sum = offset +| target_offset;
 
                 if (sum < best_sum) {
                     best_sum = sum;
-                    best = .{
-                        .value = item,
-                        .source_index = @intCast(self.source_index + offset),
-                        .target_index = @intCast(self.target_index + target_offset),
-                    };
+                    best_source = offset;
+                    best_target = target_offset;
+                    best_value = item;
                 }
             }
 
-            if (best) |pair| {
-                self.source_index = @as(usize, pair.source_index) + 1;
-                self.target_index = @as(usize, pair.target_index) + 1;
-            }
+            if (best_sum == UNSET) return null;
 
-            return best;
+            const pair: Pair = .{
+                .value = best_value,
+                .source_index = @intCast(self.source_index + best_source),
+                .target_index = @intCast(self.target_index + best_target),
+            };
+
+            self.source_index += best_source + 1;
+            self.target_index += best_target + 1;
+
+            return pair;
         }
 
         pub fn next(self: *Self) ?u8 {
