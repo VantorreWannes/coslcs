@@ -49,5 +49,5 @@ pub fn main(init: std.process.Init) !void {
     try out.print("matched {d} pair(s)\n", .{count});
     try out.print("source  {d}/{d} ({d:.1}%)\n", .{ count, source.len, percent(count, source.len) });
     try out.print("target  {d}/{d} ({d:.1}%)\n", .{ count, target.len, percent(count, target.len) });
-    // try out.print("text    {s}\n", .{matched.items});
+    try out.print("text    {s}\n", .{matched.items});
 }
